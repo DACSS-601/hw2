@@ -1,0 +1,348 @@
+---
+title: "Applying Functions"
+author: "Abhinav Erraguntla"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+
+## R Markdown
+
+This R Markdown notebook is a rewritten version of the Google Colab notebook titled
+"Applying Functions in R".
+
+The notebook demonstrates how to:
+
+Read Excel data directly from GitHub
+
+Apply built-in R functions
+
+Use apply(), lapply(), and sapply()
+
+Create and use custom functions
+
+```{r}
+# The following line installs the 'rio' package, which allows reading Excel files
+
+# This line is commented out to prevent repeated installation
+
+# install.packages("rio")
+
+# This line loads the 'rio' package into the current R session
+
+library(rio)
+
+```
+
+```{r}
+
+# This line stores the raw GitHub URL of the Excel file as a character string
+linkGit <- "https://github.com/DACSS-601/hw2/raw/main/FSI-2023-DOWNLOAD.xlsx"
+
+# This line imports the Excel file from GitHub into a data frame
+fragility23 <- rio::import(file = linkGit)
+
+# This line displays the structure of the imported data
+str(fragility23)
+
+```
+
+
+```{r}
+# This line would attempt to apply sqrt() to the entire data frame
+
+# It is commented out because sqrt() only works on numeric values
+
+# sqrt(fragility23)
+
+```
+
+
+```{r}
+# This line applies the square root function to columns 4 and 5 of the data frame
+
+sqrt(fragility23[, 4:5])
+
+```
+
+
+
+```{r}
+# This line applies the square root function to the first value in the 'Total' column
+
+sqrt(fragility23$Total[1])
+
+```
+
+
+```{r}
+# This line calculates the sum of all values in columns 4 and 5
+
+sum(fragility23[, 4:5])
+
+```
+
+```{r}
+# This line applies the sum function column-wise (margin = 2)
+
+print(apply(fragility23[, 4:5], 2, sum))
+
+```
+
+```{r}
+# This line checks the data type of the object returned by apply()
+
+typeof(apply(fragility23[, 4:5], 2, sum))
+
+```
+
+
+```{r}
+# This line applies the sum function row-wise (margin = 1)
+
+print(apply(fragility23[, 4:5], 1, sum))
+
+```
+
+
+```{r}
+# This line applies the sum function to each selected column using lapply()
+
+print(lapply(fragility23[, 4:5], sum))
+
+```
+
+
+```{r}
+# This line checks the data type of the object returned by lapply()
+
+typeof(lapply(fragility23[, 4:5], sum))
+
+```
+
+
+```{r}
+# This line checks the class of the object returned by lapply()
+
+class(lapply(fragility23[, 4:5], sum))
+
+```
+
+
+```{r}
+# This line applies the sum function to each selected column using sapply()
+
+print(sapply(fragility23[, 4:5], sum))
+
+```
+
+```{r}
+# This line checks the class of the object returned by sapply() with sum
+class(sapply(fragility23[, 4:5], sum))
+```
+
+
+```{r}
+# This line applies the square root function to each selected column using lapply()
+
+print(lapply(fragility23[, 4:5], sqrt))
+
+```
+
+
+```{r}
+# This line checks the class of the object returned by lapply() with sqrt()
+
+class(lapply(fragility23[, 4:5], sqrt))
+
+```
+
+
+```{r}
+# This line applies the square root function to each selected column using sapply()
+
+print(sapply(fragility23[, 4:5], sqrt))
+
+```
+
+
+
+
+```{r}
+# This line defines a function named 'theOnesOK'
+
+theOnesOK <- function(DF_country_and_variable) {
+
+# This line extracts the second column from the input data frame
+
+variable_values <- DF_country_and_variable[, 2]
+
+# This line computes the mean of the numeric values while ignoring missing data
+
+avg_value <- mean(variable_values, na.rm = TRUE)
+
+# This line compares each value to the average and assigns a label
+
+is_above <- ifelse(variable_values > avg_value,
+"Above Average",
+"Below/At Average")
+
+# This line adds the classification result as a new column named 'Status'
+
+DF_country_and_variable$Status <- is_above
+
+# This line returns the modified data frame
+
+return(DF_country_and_variable)
+}
+
+```
+
+```{r}
+# This line applies the custom function to Country and Demographic Pressure columns
+
+theOnesOK(fragility23[, c("Country", "S1: Demographic Pressures")])
+
+```
+
+
+```{r}
+# This line defines a function named 'mystery'
+
+mystery <- function(DF, positionsToUse, CountryColumn = "Country") {
+
+# This line creates a new data frame containing only the country column
+
+newDF <- DF[, c(CountryColumn), drop = FALSE]
+
+# This line stores the name of the new column as a character string
+
+average <- "average"
+
+# This line calculates row-wise means across selected columns
+
+newDF[, average] <- apply(DF[, positionsToUse], 1, mean, na.rm = TRUE)
+
+# This line returns the final data frame with country and average columns
+
+return(newDF[, c(CountryColumn, average)])
+}
+
+```
+
+
+```{r}
+# This line applies the mystery function using columns 4 through 6
+
+mystery(fragility23, 4:6)
+
+```
+
+```{r}
+# This line defines a function named 'theOnesOK2' with three parameters:
+# DF is the input data frame,
+# DFvariable is the name (or position) of the variable to analyze,
+# CountryColumn is the name of the country column (default is "Country")
+theOnesOK2 = function(DF, DFvariable, CountryColumn='Country') {
+
+  # This line extracts the column specified by DFvariable from the data frame
+  variable_values <- DF[, DFvariable]
+
+  # This line calculates the mean of the selected variable,
+  # ignoring any missing (NA) values
+  avg_value <- mean(variable_values, na.rm = TRUE)
+
+  # This line compares each value to the average and assigns a label:
+  # "Above Average" if greater than the mean, otherwise "Below/At Average"
+  is_above <- ifelse(
+    variable_values > avg_value,
+    "Above Average",
+    "Below/At Average"
+  )
+
+  # This line creates a new column name dynamically by combining text
+  # with the variable name (e.g., "Status_on_S1: Demographic Pressures")
+  newname = paste('Status_on', DFvariable)
+
+  # This line adds the classification result as a new column to the data frame
+  DF[, newname] <- is_above 
+
+  # This line returns only the country column and the newly created status column
+  return(DF[, c(CountryColumn, newname)])
+}
+
+```
+### Explanation of theOnesOK2
+
+The function `theOnesOK2` determines whether each country’s value for a selected variable
+is above or below the average of that variable.
+
+Unlike `theOnesOK`, which assumes the variable of interest is always the second column,
+`theOnesOK2` allows the user to explicitly specify which column to analyze.
+This makes the function more flexible and reusable.
+
+The function works by:
+1. Extracting the specified variable from the data frame.
+2. Computing the mean of that variable while ignoring missing values.
+3. Comparing each country’s value to the average.
+4. Creating a new column that labels each country as "Above Average" or "Below/At Average".
+5. Returning a simplified data frame containing only country names and the classification.
+
+
+
+| Aspect             | `theOnesOK`           | `theOnesOK2`                          |
+| ------------------ | --------------------- | ------------------------------------- |
+| Variable selection | Always uses column 2  | User-specified variable               |
+| Country column     | Fixed                 | User-specified                        |
+| Column naming      | Fixed name (`Status`) | Dynamic name (`Status_on_<variable>`) |
+| Flexibility        | Limited               | Highly flexible                       |
+| Reusability        | Low                   | High                                  |
+
+
+```{r}
+# This line defines a function named 'mistery' with three parameters:
+# DF is the input data frame,
+# positionsToUse specifies which columns should be averaged,
+# CountryColumn is the name of the country column (default is "Country")
+mistery = function(DF, positionsToUse, CountryColumn='Country'){
+
+  # This line creates a new data frame containing only the country column,
+  # using drop = FALSE to ensure it remains a data frame
+  newDF = DF[, c(CountryColumn), drop = FALSE]
+
+  # This line creates a character variable that will be used
+  # as the name of the new column
+  average = 'average'
+
+  # This line computes the row-wise mean across the selected columns
+  # apply(..., 1, ...) applies the mean function to each row
+  # na.rm = TRUE ensures missing values are ignored
+  newDF[, average] = apply(
+    DF[, positionsToUse],
+    1,
+    mean,
+    na.rm = TRUE
+  )
+
+  # This line returns a data frame with only the country column
+  # and the newly calculated average column
+  return(newDF[, c(CountryColumn, average)])
+}
+
+```
+
+### Explanation of mistery
+
+The function `mistery` computes a row-wise average across multiple selected columns.
+Each row corresponds to a country, so the function produces an average score per country.
+
+The function:
+- Takes a data frame as input
+- Uses column positions to determine which variables to include
+- Computes the mean for each row using `apply(..., 1, mean)`
+- Returns a clean data frame containing country names and their average score
+
+This function is useful for creating composite indicators from multiple variables.
+
+
